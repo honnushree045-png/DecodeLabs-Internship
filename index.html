@@ -1,0 +1,972 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Plant Care Assistant</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --paper:      #FBFBF7;
+    --paper-dim:  #F2F1E9;
+    --ink:        #1B231D;
+    --ink-soft:   #55604F;
+    --forest:     #1F3D2B;
+    --forest-2:   #274A34;
+    --leaf:       #3F7350;
+    --leaf-soft:  #E4EEE0;
+    --leaf-line:  #C9DCC2;
+    --amber:      #C68A2E;
+    --amber-soft: #F7E9D2;
+    --sky:        #3C7A93;
+    --sky-soft:   #DFEEF3;
+    --line:       #E4E1D6;
+    --shadow:     rgba(31,61,43,0.10);
+    --card:       #FFFFFF;
+    --radius-lg: 18px;
+    --radius-md: 12px;
+    --radius-sm: 8px;
+  }
+  [data-theme="dark"]{
+    --paper:      #10160F;
+    --paper-dim:  #171E15;
+    --ink:        #E9EFE4;
+    --ink-soft:   #A9B6A1;
+    --forest:     #0E1F15;
+    --forest-2:   #16301F;
+    --leaf:       #5C9A6E;
+    --leaf-soft:  #1C2A1D;
+    --leaf-line:  #2C4030;
+    --amber:      #D8A85A;
+    --amber-soft: #2E2517;
+    --sky:        #6BB2CB;
+    --sky-soft:   #16262A;
+    --line:       #283128;
+    --shadow:     rgba(0,0,0,0.35);
+    --card:       #182016;
+  }
+  *{box-sizing:border-box;}
+  html,body{height:100%;}
+  body{
+    margin:0;
+    min-height:100vh;
+    background: var(--paper-dim);
+    background-image:
+      radial-gradient(circle at 12% 8%, rgba(63,115,80,0.06), transparent 40%),
+      radial-gradient(circle at 90% 92%, rgba(198,138,46,0.06), transparent 38%);
+    font-family:'Inter', -apple-system, sans-serif;
+    color: var(--ink);
+    display:flex;
+    justify-content:center;
+    align-items:flex-start;
+    padding: 32px 16px;
+    transition: background-color .25s ease, color .25s ease;
+  }
+
+  .app{
+    width:100%;
+    max-width: 600px;
+    background: var(--paper);
+    border-radius: var(--radius-lg);
+    border: 1px solid var(--line);
+    box-shadow: 0 18px 40px var(--shadow);
+    overflow:hidden;
+    display:flex;
+    flex-direction:column;
+    height: min(760px, 90vh);
+    transition: background-color .25s ease, border-color .25s ease;
+  }
+
+  /* ---------- Header ---------- */
+  header{
+    background: linear-gradient(155deg, var(--forest) 0%, var(--forest-2) 100%);
+    color: var(--paper);
+    padding: 18px 20px;
+    display:flex;
+    align-items:center;
+    gap: 12px;
+    flex-shrink:0;
+  }
+  [data-theme="dark"] header{ color:#E9EFE4; }
+  .avatar-mark{
+    width:42px; height:42px;
+    border-radius: 12px;
+    background: rgba(251,251,247,0.12);
+    border: 1px solid rgba(251,251,247,0.22);
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    flex-shrink:0;
+  }
+  .avatar-mark svg{ width:22px; height:22px; }
+  .head-text h1{
+    margin:0;
+    font-family:'Fraunces', Georgia, serif;
+    font-weight:600;
+    font-size: 19px;
+    letter-spacing: .2px;
+    line-height:1.2;
+  }
+  .head-text p{
+    margin: 3px 0 0;
+    font-size: 12px;
+    color: rgba(251,251,247,0.68);
+  }
+  .head-actions{
+    margin-left:auto;
+    display:flex;
+    align-items:center;
+    gap:6px;
+  }
+  .icon-btn{
+    width:44px; height:40px;
+    border-radius: 10px;
+    border: 1px solid rgba(251,251,247,0.24);
+    background: rgba(251,251,247,0.09);
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    justify-content:center;
+    gap:3px;
+    cursor:pointer;
+    color: rgba(251,251,247,0.92);
+    transition: background .15s ease, transform .1s ease, border-color .15s ease;
+    position:relative;
+  }
+  .icon-btn svg{ width:16px; height:16px; flex-shrink:0; }
+  .icon-btn .btn-label{
+    font-size:8px;
+    font-weight:600;
+    letter-spacing:.2px;
+    color: rgba(251,251,247,0.75);
+    line-height:1;
+  }
+  .icon-btn:hover{ background: rgba(251,251,247,0.2); border-color: rgba(251,251,247,0.4); }
+  .icon-btn:active{ transform: scale(0.94); }
+  .icon-btn.is-on{ background: var(--amber); border-color: var(--amber); color: var(--forest); }
+  .icon-btn.is-on .btn-label{ color: var(--forest); }
+  .fav-count{
+    position:absolute;
+    top:-6px; right:-6px;
+    background: var(--amber);
+    color: var(--forest);
+    font-size:9.5px;
+    font-weight:700;
+    min-width:15px; height:15px;
+    border-radius:8px;
+    display:none;
+    align-items:center;
+    justify-content:center;
+    padding:0 3px;
+    line-height:1;
+    border: 1.5px solid var(--forest);
+  }
+  .fav-count.show{ display:flex; }
+  .status-dot{
+    display:flex;
+    align-items:center;
+    gap:6px;
+    font-size:10.5px;
+    color: rgba(251,251,247,0.75);
+    font-weight:500;
+    white-space:nowrap;
+    margin-right:2px;
+  }
+  .status-dot::before{
+    content:"";
+    width:7px; height:7px;
+    border-radius:50%;
+    background:#7FD99A;
+    box-shadow: 0 0 0 3px rgba(127,217,154,0.2);
+  }
+
+  /* ---------- Browse panel ---------- */
+  .browse-panel{
+    max-height:0;
+    overflow:hidden;
+    flex-shrink:0;
+    background: var(--paper-dim);
+    border-bottom: 1px solid transparent;
+    transition: max-height .28s ease, border-color .2s ease;
+  }
+  .browse-panel.open{
+    max-height: 260px;
+    border-bottom: 1px solid var(--line);
+    overflow-y:auto;
+  }
+  .browse-inner{ padding: 14px 18px; }
+  .browse-cat{ margin-bottom: 12px; }
+  .browse-cat:last-child{ margin-bottom:0; }
+  .browse-cat h4{
+    margin:0 0 7px;
+    font-size:11px;
+    text-transform:uppercase;
+    letter-spacing:.7px;
+    color: var(--ink-soft);
+    font-weight:600;
+  }
+  .browse-chips{ display:flex; flex-wrap:wrap; gap:6px; }
+  .browse-chip{
+    font-family:'Inter', sans-serif;
+    font-size:12px;
+    font-weight:500;
+    color: var(--leaf);
+    border: 1px solid var(--leaf-line);
+    background: var(--card);
+    padding:5px 10px;
+    border-radius: 20px;
+    cursor:pointer;
+    transition: background .15s ease, transform .1s ease;
+  }
+  .browse-chip:hover{ background: var(--leaf-soft); }
+  .browse-chip:active{ transform: scale(0.96); }
+
+  /* ---------- Chat area ---------- */
+  .chat{
+    flex:1;
+    overflow-y:auto;
+    padding: 20px;
+    display:flex;
+    flex-direction:column;
+    gap: 14px;
+    scroll-behavior:smooth;
+  }
+  .chat::-webkit-scrollbar{ width:6px; }
+  .chat::-webkit-scrollbar-thumb{ background: var(--leaf-line); border-radius:6px; }
+
+  .row{ display:flex; gap:10px; max-width:100%; }
+  .row.bot{ justify-content:flex-start; }
+  .row.user{ justify-content:flex-end; }
+
+  .bubble-avatar{
+    width:28px; height:28px;
+    border-radius:8px;
+    background: var(--leaf-soft);
+    border: 1px solid var(--leaf-line);
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    flex-shrink:0;
+    margin-top:2px;
+  }
+  .bubble-avatar svg{ width:15px; height:15px; }
+
+  .bubble{
+    max-width: 82%;
+    padding: 11px 15px;
+    font-size: 14.5px;
+    line-height:1.5;
+    white-space: pre-line;
+  }
+  .bubble.bot{
+    background: var(--leaf-soft);
+    color: var(--ink);
+    border-radius: 4px 14px 14px 14px;
+    border: 1px solid var(--leaf-line);
+  }
+  .bubble.user{
+    background: var(--forest);
+    color: #F7F6EF;
+    border-radius: 14px 4px 14px 14px;
+  }
+  .bubble.card{ padding:0; overflow:hidden; white-space:normal; }
+
+  /* ---------- Plant fact card (new) ---------- */
+  .plant-card{ width:100%; }
+  .plant-card-head{
+    display:flex;
+    align-items:center;
+    gap:10px;
+    padding: 12px 14px;
+    background: linear-gradient(155deg, var(--forest) 0%, var(--forest-2) 100%);
+    color:#F7F6EF;
+  }
+  .plant-card-emoji{ font-size:22px; line-height:1; }
+  .plant-card-head h3{
+    margin:0;
+    font-family:'Fraunces', Georgia, serif;
+    font-size:15.5px;
+    font-weight:600;
+  }
+  .plant-card-head .sub{
+    margin:1px 0 0;
+    font-size:11px;
+    color: rgba(247,246,239,0.7);
+  }
+  .star-btn{
+    margin-left:auto;
+    width:28px; height:28px;
+    border-radius:8px;
+    border:1px solid rgba(247,246,239,0.25);
+    background: rgba(247,246,239,0.08);
+    color:#F7E9D2;
+    cursor:pointer;
+    font-size:14px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    flex-shrink:0;
+    transition: background .15s ease, transform .1s ease;
+  }
+  .star-btn:hover{ background: rgba(247,246,239,0.18); }
+  .star-btn.active{ background: var(--amber); color: var(--forest); border-color: var(--amber); }
+  .star-btn:active{ transform: scale(0.9); }
+
+  .plant-card-body{ padding: 10px 14px 13px; background: var(--card); }
+  .fact-row{
+    display:flex;
+    gap:10px;
+    align-items:flex-start;
+    padding: 7px 0;
+    border-bottom: 1px dashed var(--line);
+  }
+  .fact-row:last-child{ border-bottom:none; }
+  .fact-ico{
+    width:24px; height:24px;
+    border-radius:7px;
+    background: var(--leaf-soft);
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    font-size:12.5px;
+    flex-shrink:0;
+    margin-top:1px;
+  }
+  .fact-row.season .fact-ico{ background: var(--amber-soft); }
+  .fact-row.duration .fact-ico{ background: var(--sky-soft); }
+  .fact-text{ font-size:13px; line-height:1.45; color: var(--ink); }
+  .fact-text b{
+    display:block;
+    font-size:10.5px;
+    text-transform:uppercase;
+    letter-spacing:.5px;
+    color: var(--ink-soft);
+    font-weight:600;
+    margin-bottom:1px;
+  }
+  .plant-card-foot{
+    padding: 9px 14px;
+    background: var(--paper-dim);
+    font-size:12px;
+    color: var(--ink-soft);
+    border-top:1px solid var(--line);
+  }
+
+  .typing-row{ display:none; align-items:center; gap:10px; }
+  .typing-row.show{ display:flex; }
+  .typing-bubble{
+    background: var(--leaf-soft);
+    border: 1px solid var(--leaf-line);
+    border-radius: 4px 14px 14px 14px;
+    padding: 12px 16px;
+    display:flex;
+    gap:4px;
+  }
+  .typing-bubble span{
+    width:6px; height:6px;
+    border-radius:50%;
+    background: var(--leaf);
+    opacity:.5;
+    animation: bounce 1.1s infinite ease-in-out;
+  }
+  .typing-bubble span:nth-child(2){ animation-delay:.15s; }
+  .typing-bubble span:nth-child(3){ animation-delay:.3s; }
+  @keyframes bounce{
+    0%,60%,100%{ transform:translateY(0); opacity:.5; }
+    30%{ transform:translateY(-4px); opacity:1; }
+  }
+  @media (prefers-reduced-motion: reduce){
+    .typing-bubble span{ animation:none; }
+    .browse-panel{ transition:none; }
+  }
+
+  /* ---------- Chips ---------- */
+  .chips{
+    padding: 0 20px 14px;
+    display:flex;
+    flex-wrap:wrap;
+    gap:8px;
+    flex-shrink:0;
+  }
+  .chip{
+    font-family:'Inter', sans-serif;
+    font-size:12.5px;
+    font-weight:500;
+    color: var(--leaf);
+    border: 1px solid var(--leaf-line);
+    background: var(--leaf-soft);
+    padding:6px 12px;
+    border-radius: 20px;
+    cursor:pointer;
+    transition: background .15s ease, transform .1s ease;
+  }
+  .chip:hover{ background: #D6E7CE; }
+  [data-theme="dark"] .chip:hover{ background: #24391F; }
+  .chip:active{ transform: scale(0.97); }
+
+  /* ---------- Input ---------- */
+  form{
+    display:flex;
+    gap:8px;
+    padding: 14px 16px;
+    border-top: 1px solid var(--line);
+    background: var(--paper);
+    flex-shrink:0;
+  }
+  input[type=text]{
+    flex:1;
+    padding: 12px 14px;
+    border-radius: var(--radius-md);
+    border: 1px solid var(--line);
+    background: var(--paper-dim);
+    color: var(--ink);
+    font-family:'Inter', sans-serif;
+    font-size:14px;
+    outline:none;
+    transition: border-color .15s ease;
+  }
+  input[type=text]:focus{ border-color: var(--leaf); background: var(--paper); }
+  input[type=text]::placeholder{ color: var(--ink-soft); opacity:.55; }
+  input[type=text]:disabled{ opacity:.6; }
+
+  button{
+    padding: 0 20px;
+    border:none;
+    border-radius: var(--radius-md);
+    background: var(--leaf);
+    color: #F7F6EF;
+    font-family:'Inter', sans-serif;
+    font-weight:600;
+    font-size:13.5px;
+    cursor:pointer;
+    transition: background .15s ease;
+  }
+  button:hover:not(:disabled){ background: var(--forest); }
+  button:disabled{ opacity:.55; cursor:default; }
+  button:focus-visible, input:focus-visible, .chip:focus-visible, .browse-chip:focus-visible, .icon-btn:focus-visible, .star-btn:focus-visible{
+    outline:2px solid var(--amber); outline-offset:2px;
+  }
+
+  @media (max-width:480px){
+    body{ padding:0; }
+    .app{ height:100vh; max-width:100%; border-radius:0; border:none; }
+  }
+</style>
+</head>
+<body>
+<div class="app">
+  <header>
+    <div class="avatar-mark" aria-hidden="true">
+      <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M12 21C12 21 5 17.5 5 10.5C5 6 8 3 12 3C16 3 19 6 19 10.5C19 17.5 12 21 12 21Z" stroke="#F1EDE1" stroke-width="1.4" stroke-linejoin="round"/>
+        <path d="M12 21V9" stroke="#F1EDE1" stroke-width="1.4" stroke-linecap="round"/>
+        <path d="M12 13C12 13 8.5 12.5 8.5 9" stroke="#F1EDE1" stroke-width="1.2" stroke-linecap="round"/>
+        <path d="M12 16C12 16 15.5 15.5 15.5 12" stroke="#F1EDE1" stroke-width="1.2" stroke-linecap="round"/>
+      </svg>
+    </div>
+    <div class="head-text">
+      <h1>Plant Care Assistant</h1>
+      <p>Water, sun, soil, season &amp; harvest tips</p>
+    </div>
+    <div class="head-actions">
+      <div class="status-dot">online</div>
+      <button class="icon-btn" id="browseToggle" type="button" title="Browse plants by category" aria-label="Browse plants by category">
+        <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M4 6h16M4 12h16M4 18h10" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+        <span class="btn-label">Browse</span>
+      </button>
+      <button class="icon-btn" id="favToggle" type="button" title="My favorite plants" aria-label="My favorite plants">
+        <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 17.3l-5.3 3 1.4-5.9-4.6-4 6-.5L12 4l2.5 5.9 6 .5-4.6 4 1.4 5.9z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></svg>
+        <span class="btn-label">Garden</span>
+        <span class="fav-count" id="favCount">0</span>
+      </button>
+      <button class="icon-btn" id="themeToggle" type="button" title="Toggle dark mode" aria-label="Toggle dark mode">
+        <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" id="themeIcon"><path d="M12 3a9 9 0 1 0 9 9c0-.46-.04-.92-.1-1.36A5.5 5.5 0 0 1 12 3z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></svg>
+        <span class="btn-label" id="themeLabel">Dark</span>
+      </button>
+    </div>
+  </header>
+
+  <div class="browse-panel" id="browsePanel">
+    <div class="browse-inner" id="browseInner"></div>
+  </div>
+
+  <div class="chat" id="chat"></div>
+
+  <div class="row bot typing-row" id="typingRow">
+    <div class="bubble-avatar">
+      <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 21C12 21 5 17.5 5 10.5C5 6 8 3 12 3C16 3 19 6 19 10.5C19 17.5 12 21 12 21Z" stroke="#3F7350" stroke-width="1.5"/></svg>
+    </div>
+    <div class="typing-bubble"><span></span><span></span><span></span></div>
+  </div>
+
+  <div class="chips" id="chips"></div>
+
+  <form id="chatForm" autocomplete="off">
+    <input type="text" id="userInput" placeholder="e.g. rose, tulip, cactus…" aria-label="Message" list="plantSuggestions">
+    <datalist id="plantSuggestions"></datalist>
+    <button type="submit">Send</button>
+  </form>
+</div>
+
+<script>
+  // ---------- Plant database ----------
+  // Each entry: emoji, sun needs, watering interval (days), soil type,
+  // best season for planting/blooming/harvest, and how long/how to water each time.
+  const PLANTS = {
+    // ---- Flowers ----
+    "rose":           {emoji:"🌹", sun:"6 hours of sunlight", waterDays:2,  soil:"well-drained soil", category:"Flowers",
+                        season:"Blooms spring to early summer; prune back in late winter", duration:"Water deeply for 1–2 minutes at the base"},
+    "jasmine":        {emoji:"🌼", sun:"partial to full sunlight", waterDays:2,  soil:"slightly acidic soil", category:"Flowers",
+                        season:"Flowers heavily through summer, often fragrant at night", duration:"Water for 30–60 seconds, keep soil lightly moist"},
+    "sunflower":      {emoji:"🌻", sun:"6-8 hours of sunlight", waterDays:2,  soil:"loose, well-drained soil", category:"Flowers",
+                        season:"Sow after last frost in spring; blooms mid-to-late summer", duration:"Deep water for 1–2 minutes, more once buds form"},
+    "marigold":       {emoji:"🌼", sun:"full sunlight", waterDays:2,  soil:"most soil types", category:"Flowers",
+                        season:"Sow in spring; blooms continuously summer through fall", duration:"Water for 30 seconds at soil level, avoid wetting leaves"},
+    "lavender":       {emoji:"💜", sun:"full sunlight", waterDays:10, soil:"well-drained sandy soil", category:"Flowers",
+                        season:"Blooms early to late summer", duration:"Light water for 20–30 seconds; let soil dry fully between waterings"},
+    "orchid":         {emoji:"🌸", sun:"bright indirect light", waterDays:7,  soil:"special orchid bark mix", category:"Flowers",
+                        season:"Blooms once or twice a year, often winter to spring", duration:"Soak roots for 10–15 seconds, then drain completely"},
+    "hibiscus":       {emoji:"🌺", sun:"full sunlight", waterDays:1,  soil:"slightly acidic, well-drained soil", category:"Flowers",
+                        season:"Blooms continuously through summer into fall", duration:"Water for 1 minute daily in hot weather"},
+    "lily":           {emoji:"🌷", sun:"partial to full sunlight", waterDays:3,  soil:"well-drained soil", category:"Flowers",
+                        season:"Bulbs planted in fall or spring; blooms in summer", duration:"Water for 45–60 seconds, keep soil evenly moist"},
+    "tulip":          {emoji:"🌷", sun:"full sun to light shade", waterDays:4,  soil:"well-drained, slightly sandy soil", category:"Flowers",
+                        season:"Plant bulbs in fall; blooms early to mid spring", duration:"Water for 30 seconds after planting, then only during dry spells"},
+    "daisy":          {emoji:"🌼", sun:"full sunlight", waterDays:3,  soil:"well-drained loamy soil", category:"Flowers",
+                        season:"Blooms late spring through summer", duration:"Water for 30–45 seconds at the base"},
+    "zinnia":         {emoji:"🌸", sun:"full sunlight", waterDays:2,  soil:"well-drained fertile soil", category:"Flowers",
+                        season:"Blooms summer through first frost", duration:"Water for 30 seconds, avoid wetting foliage"},
+    "petunia":        {emoji:"🌸", sun:"full sunlight", waterDays:2,  soil:"rich, well-drained soil", category:"Flowers",
+                        season:"Blooms spring through fall", duration:"Water for 30–45 seconds until soil is moist"},
+    "dahlia":         {emoji:"🌺", sun:"6-8 hours of sunlight", waterDays:3,  soil:"loose, well-drained fertile soil", category:"Flowers",
+                        season:"Tubers planted in spring; blooms mid-summer to first frost", duration:"Water deeply for 1–2 minutes"},
+    "carnation":      {emoji:"🌸", sun:"full sunlight", waterDays:4,  soil:"well-drained, slightly alkaline soil", category:"Flowers",
+                        season:"Blooms late spring to early summer", duration:"Water for 30 seconds, avoid overhead watering"},
+    "daffodil":       {emoji:"🌼", sun:"full sun to partial shade", waterDays:5,  soil:"well-drained soil", category:"Flowers",
+                        season:"Bulbs planted in fall; blooms early spring", duration:"Water for 30 seconds after planting, minimal after"},
+    "peony":          {emoji:"🌸", sun:"full sun to light shade", waterDays:5,  soil:"rich, well-drained soil", category:"Flowers",
+                        season:"Blooms late spring to early summer", duration:"Deep water for 1 minute during dry spells"},
+    "hydrangea":      {emoji:"💠", sun:"morning sun, afternoon shade", waterDays:2,  soil:"moist, well-drained soil", category:"Flowers",
+                        season:"Blooms early summer through fall", duration:"Water for 1–2 minutes, keep soil consistently moist"},
+    "chrysanthemum":  {emoji:"🌼", sun:"full sunlight", waterDays:3,  soil:"well-drained fertile soil", category:"Flowers",
+                        season:"Blooms late summer into fall", duration:"Water for 45 seconds at the base"},
+    "poppy":          {emoji:"🌺", sun:"full sunlight", waterDays:5,  soil:"well-drained, light soil", category:"Flowers",
+                        season:"Blooms late spring to summer", duration:"Water for 30 seconds; drought-tolerant once established"},
+    "iris":           {emoji:"💐", sun:"full sun to partial shade", waterDays:5,  soil:"well-drained, slightly acidic soil", category:"Flowers",
+                        season:"Blooms mid to late spring", duration:"Water for 30–45 seconds, avoid soggy rhizomes"},
+    "geranium":       {emoji:"🌸", sun:"full sunlight", waterDays:4,  soil:"well-drained soil", category:"Flowers",
+                        season:"Blooms spring through fall", duration:"Water for 30 seconds, let top soil dry between"},
+    "periwinkle":     {emoji:"💜", sun:"full sun to partial shade", waterDays:4,  soil:"well-drained soil", category:"Flowers",
+                        season:"Blooms spring through fall", duration:"Water for 30 seconds; drought-tolerant"},
+    "cosmos":         {emoji:"🌸", sun:"full sunlight", waterDays:4,  soil:"well-drained, average soil", category:"Flowers",
+                        season:"Blooms summer to fall", duration:"Water for 30 seconds; thrives on minimal watering"},
+    "gerbera":        {emoji:"🌼", sun:"bright indirect to full sun", waterDays:3,  soil:"well-drained, aerated soil", category:"Flowers",
+                        season:"Blooms spring through fall", duration:"Water for 30–45 seconds at soil level"},
+    "bougainvillea":  {emoji:"🌺", sun:"full sunlight", waterDays:5,  soil:"well-drained, slightly dry soil", category:"Flowers",
+                        season:"Blooms most heavily in the dry/winter-spring season", duration:"Water for 1 minute; let soil dry between for best blooms"},
+    "morning glory":  {emoji:"💠", sun:"full sunlight", waterDays:2,  soil:"average, well-drained soil", category:"Flowers",
+                        season:"Blooms summer through fall", duration:"Water for 30 seconds daily in hot weather"},
+    "plumeria":       {emoji:"🌸", sun:"full sunlight", waterDays:6,  soil:"well-drained, sandy soil", category:"Flowers",
+                        season:"Blooms late spring through fall", duration:"Water for 1 minute; let dry out between waterings"},
+    "camellia":       {emoji:"🌺", sun:"partial shade", waterDays:4,  soil:"acidic, well-drained soil", category:"Flowers",
+                        season:"Blooms fall through spring depending on variety", duration:"Water for 1 minute, keep soil evenly moist"},
+
+    // ---- Houseplants / succulents ----
+    "aloe vera":      {emoji:"🪴", sun:"bright indirect sunlight", waterDays:17, soil:"sandy, drought-tolerant soil", category:"Houseplants & Succulents",
+                        season:"Grows year-round indoors; slows down in winter", duration:"Soak for 30 seconds, then let dry out completely"},
+    "money plant":    {emoji:"🍀", sun:"low to medium light", waterDays:7,  soil:"any soil, or plain water", category:"Houseplants & Succulents",
+                        season:"Grows year-round; fastest growth in spring–summer", duration:"Water for 20–30 seconds, or simply top up if grown in water"},
+    "cactus":         {emoji:"🌵", sun:"full sunlight", waterDays:17, soil:"sandy, well-drained soil", category:"Houseplants & Succulents",
+                        season:"Active growth in spring–summer; dormant in winter", duration:"Soak for 30 seconds, then let soil dry out fully"},
+    "snake plant":    {emoji:"🐍", sun:"low light (tolerant)", waterDays:17, soil:"well-drained soil", category:"Houseplants & Succulents",
+                        season:"Grows year-round; growth slows in winter", duration:"Water for 20 seconds, let soil dry out completely between"},
+    "spider plant":   {emoji:"🕷️", sun:"bright indirect light", waterDays:7,  soil:"slightly dry soil between waterings", category:"Houseplants & Succulents",
+                        season:"Grows year-round; produces new 'babies' in summer", duration:"Water for 30–45 seconds, let the top inch dry between"},
+    "fern":           {emoji:"🌿", sun:"shade / low light", waterDays:2,  soil:"consistently moist soil", category:"Houseplants & Succulents",
+                        season:"Grows year-round in shade; lushest in warm months", duration:"Mist and water for 30–45 seconds, keep consistently moist"},
+    "bamboo":         {emoji:"🎋", sun:"partial shade to full sun", waterDays:3,  soil:"consistently moist soil", category:"Houseplants & Succulents",
+                        season:"Grows year-round; fastest in spring–summer", duration:"Water for 30–45 seconds, or keep 2–3cm water in the container"},
+
+    // ---- Herbs / edibles ----
+    "tulsi":          {emoji:"🌿", sun:"full sunlight", waterDays:1,  soil:"moist but not soggy soil", category:"Herbs & Edibles",
+                        season:"Best growing season is summer; harvest leaves regularly", duration:"Water for 20–30 seconds daily, keep soil moist"},
+    "basil":          {emoji:"🌿", sun:"full sunlight", waterDays:1,  soil:"moist but not soggy soil", category:"Herbs & Edibles",
+                        season:"Best grown in summer; harvest leaves before flowering", duration:"Water for 20–30 seconds daily"},
+    "mint":           {emoji:"🌱", sun:"partial shade", waterDays:1,  soil:"moist soil", category:"Herbs & Edibles",
+                        season:"Grows vigorously spring through fall", duration:"Water for 20–30 seconds daily, keep soil moist"},
+    "tomato":         {emoji:"🍅", sun:"6-8 hours of sunlight", waterDays:1,  soil:"rich, well-drained soil", category:"Herbs & Edibles",
+                        season:"Plant after last frost; harvest 60–85 days later in summer", duration:"Water deeply for 1–2 minutes at the base"},
+    "chilli":         {emoji:"🌶️", sun:"full sunlight", waterDays:2,  soil:"well-drained fertile soil", category:"Herbs & Edibles",
+                        season:"Plant in spring; harvest through summer into fall", duration:"Water for 30–45 seconds every 2 days"},
+    "chili":          {emoji:"🌶️", sun:"full sunlight", waterDays:2,  soil:"well-drained fertile soil", category:"Herbs & Edibles",
+                        season:"Plant in spring; harvest through summer into fall", duration:"Water for 30–45 seconds every 2 days"},
+    "neem":           {emoji:"🌳", sun:"full sunlight", waterDays:3,  soil:"well-drained soil (drought-tolerant once grown)", category:"Herbs & Edibles",
+                        season:"Grows year-round; fresh leaf flush appears in spring", duration:"Water for 1 minute while young; drought-tolerant once mature"},
+    "curry leaf":     {emoji:"🍃", sun:"full sunlight", waterDays:3,  soil:"well-drained, slightly acidic soil", category:"Herbs & Edibles",
+                        season:"Grows year-round; best growth and harvest in summer", duration:"Water for 30–45 seconds every 3 days"},
+  };
+
+  // ---------- Intent patterns (word-boundary matched so short replies still work) ----------
+  const INTENTS = [
+    { name:"greeting", patterns:[/\bhi+\b/, /\bhii+\b/, /\bhello+\b/, /\bhey+\b/, /\byo\b/, /\bhola\b/, /good\s+(morning|afternoon|evening)/], reply:
+      "Hello! 🌿 I'm your Plant Care Assistant. Tell me a plant name and I'll give you full care tips — sun, water, soil, season & harvest!" },
+    { name:"exit", patterns:[/\bbye\b/, /\bgoodbye\b/, /\bexit\b/, /\bquit\b/, /\bsee\s+you\b/, /good\s*night/], reply:"EXIT" },
+    { name:"howAreYou", patterns:[/how\s+are\s+you/, /how('?s| is)\s+it\s+going/], reply:
+      "I'm doing great, thriving like a well-watered plant! 🌱 How can I help your garden today?" },
+    { name:"whoAreYou", patterns:[/what.?s\s+your\s+name/, /who\s+are\s+you/], reply:
+      "I am Plant Care Bot, here to help your plants grow healthy!" },
+    { name:"capabilities", patterns:[/what\s+can\s+you\s+do/, /\bhelp\b/], reply:null }, // handled specially below
+    { name:"myGarden", patterns:[/my\s+garden/, /my\s+favou?rites?/, /saved\s+plants/], reply:null }, // handled specially below
+    { name:"thanks", patterns:[/\bthank\s*(you|s)\b/, /\bthx\b/, /\bty\b/], reply:
+      "You're welcome! Happy gardening! 🌸" },
+  ];
+
+  function matchIntent(text){
+    for (const intent of INTENTS){
+      if (intent.patterns.some(p => p.test(text))) return intent;
+    }
+    return null;
+  }
+
+  function plantList(){
+    return Object.keys(PLANTS).sort().join(", ");
+  }
+
+  function escapeHTML(s){
+    return s.replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  }
+
+  function wateringsPerWeek(days){
+    const perWeek = 7 / days;
+    if (perWeek >= 6.5) return "about once a day";
+    if (perWeek < 1) return `about once every ${Math.round(days/7)} week(s)`;
+    const rounded = Math.round(perWeek * 2) / 2;
+    return `about ${rounded}x a week`;
+  }
+
+  let awaitingWateringAnswerFor = null;
+  let ended = false;
+  const favorites = new Set(); // in-session "My Garden" list
+
+  const chat = document.getElementById('chat');
+  const form = document.getElementById('chatForm');
+  const input = document.getElementById('userInput');
+  const typingRow = document.getElementById('typingRow');
+  const chipsEl = document.getElementById('chips');
+  const browsePanel = document.getElementById('browsePanel');
+  const browseInner = document.getElementById('browseInner');
+  const browseToggle = document.getElementById('browseToggle');
+  const favToggle = document.getElementById('favToggle');
+  const favCountEl = document.getElementById('favCount');
+  const themeToggle = document.getElementById('themeToggle');
+  const themeIcon = document.getElementById('themeIcon');
+  const themeLabel = document.getElementById('themeLabel');
+  const suggestionsEl = document.getElementById('plantSuggestions');
+
+  const botAvatarSVG = `<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 21C12 21 5 17.5 5 10.5C5 6 8 3 12 3C16 3 19 6 19 10.5C19 17.5 12 21 12 21Z" stroke="#3F7350" stroke-width="1.5"/></svg>`;
+  const userAvatarSVG = `<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="12" cy="8" r="3.4" stroke="#3F7350" stroke-width="1.5"/><path d="M5 20c1.2-3.6 4-5.4 7-5.4s5.8 1.8 7 5.4" stroke="#3F7350" stroke-width="1.5" stroke-linecap="round"/></svg>`;
+  const moonSVG = `<path d="M12 3a9 9 0 1 0 9 9c0-.46-.04-.92-.1-1.36A5.5 5.5 0 0 1 12 3z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/>`;
+  const sunSVG = `<circle cx="12" cy="12" r="4" stroke="currentColor" stroke-width="1.5"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>`;
+
+  // ---------- Rendering plain text bubbles (unchanged behaviour) ----------
+  function addMessage(text, who){
+    const row = document.createElement('div');
+    row.className = 'row ' + who;
+
+    if (who === 'bot'){
+      const av = document.createElement('div');
+      av.className = 'bubble-avatar';
+      av.innerHTML = botAvatarSVG;
+      row.appendChild(av);
+    }
+
+    const bubble = document.createElement('div');
+    bubble.className = 'bubble ' + who;
+    bubble.textContent = text;
+    row.appendChild(bubble);
+
+    if (who === 'user'){
+      const av = document.createElement('div');
+      av.className = 'bubble-avatar';
+      av.innerHTML = userAvatarSVG;
+      row.appendChild(av);
+    }
+
+    chat.appendChild(row);
+    chat.scrollTop = chat.scrollHeight;
+    return bubble;
+  }
+
+  // ---------- Rendering the rich plant fact card ----------
+  function addPlantCard(name){
+    const p = PLANTS[name];
+    const row = document.createElement('div');
+    row.className = 'row bot';
+
+    const av = document.createElement('div');
+    av.className = 'bubble-avatar';
+    av.innerHTML = botAvatarSVG;
+    row.appendChild(av);
+
+    const bubble = document.createElement('div');
+    bubble.className = 'bubble bot card';
+
+    const isFav = favorites.has(name);
+    bubble.innerHTML = `
+      <div class="plant-card">
+        <div class="plant-card-head">
+          <div class="plant-card-emoji">${p.emoji}</div>
+          <div>
+            <h3>${escapeHTML(titleCase(name))}</h3>
+            <p class="sub">${escapeHTML(p.category)}</p>
+          </div>
+          <button class="star-btn ${isFav ? 'active' : ''}" data-plant="${escapeHTML(name)}" type="button" title="Save to My Garden" aria-label="Save to My Garden">${isFav ? '★' : '☆'}</button>
+        </div>
+        <div class="plant-card-body">
+          <div class="fact-row"><div class="fact-ico">☀️</div><div class="fact-text"><b>Sunlight</b>${escapeHTML(p.sun)}</div></div>
+          <div class="fact-row"><div class="fact-ico">💧</div><div class="fact-text"><b>Watering</b>Every ${p.waterDays} day(s) — ${wateringsPerWeek(p.waterDays)}</div></div>
+          <div class="fact-row duration"><div class="fact-ico">⏱️</div><div class="fact-text"><b>Watering duration</b>${escapeHTML(p.duration)}</div></div>
+          <div class="fact-row"><div class="fact-ico">🪴</div><div class="fact-text"><b>Soil</b>${escapeHTML(p.soil)}</div></div>
+          <div class="fact-row season"><div class="fact-ico">🍂</div><div class="fact-text"><b>Best season</b>${escapeHTML(p.season)}</div></div>
+        </div>
+        <div class="plant-card-foot">How often (in days) do you currently water your ${escapeHTML(titleCase(name))}?</div>
+      </div>
+    `;
+
+    bubble.querySelector('.star-btn').addEventListener('click', (e) => {
+      e.stopPropagation();
+      toggleFavorite(name, e.currentTarget);
+    });
+
+    row.appendChild(bubble);
+    chat.appendChild(row);
+    chat.scrollTop = chat.scrollHeight;
+  }
+
+  function toggleFavorite(name, btnEl){
+    if (favorites.has(name)){
+      favorites.delete(name);
+    } else {
+      favorites.add(name);
+    }
+    updateFavUI();
+    if (btnEl){
+      const active = favorites.has(name);
+      btnEl.classList.toggle('active', active);
+      btnEl.textContent = active ? '★' : '☆';
+    }
+  }
+
+  function updateFavUI(){
+    const n = favorites.size;
+    favCountEl.textContent = n;
+    favCountEl.classList.toggle('show', n > 0);
+  }
+
+  function titleCase(s){
+    return s.replace(/\w\S*/g, t => t[0].toUpperCase() + t.slice(1));
+  }
+
+  function wateringFeedback(name, daysReported){
+    const ideal = PLANTS[name].waterDays;
+    const diff = daysReported - ideal;
+    const tolerance = Math.max(1, Math.floor(ideal / 4));
+
+    if (Math.abs(diff) <= tolerance){
+      return `That's right on track for ${titleCase(name)}! Keep it up. ✅`;
+    } else if (diff < 0){
+      return `That's more often than ${titleCase(name)} needs (ideal is ~${ideal} days). You might be overwatering — let the soil dry out more between waterings. 💧⚠️`;
+    } else {
+      return `That's less often than ${titleCase(name)} needs (ideal is ~${ideal} days). Your plant may be underwatered — try watering a bit more frequently. 🌵⚠️`;
+    }
+  }
+
+  function findPlantInText(text){
+    if (PLANTS.hasOwnProperty(text)) return text;
+    const found = Object.keys(PLANTS).find(name => new RegExp(`\\b${name}\\b`).test(text));
+    return found || null;
+  }
+
+  function myGardenMessage(){
+    if (favorites.size === 0){
+      return "Your garden is empty so far — tap the ☆ on any plant card to save it here!";
+    }
+    const lines = [...favorites].sort().map(n => `${PLANTS[n].emoji} ${titleCase(n)}`);
+    return "🌿 My Garden:\n" + lines.join("\n");
+  }
+
+  // getResponse returns either:
+  //  - a plain string reply, or
+  //  - {type:"card", plant:name} to render the rich fact card, or
+  //  - "EXIT"
+  function getResponse(raw){
+    const userInput = raw.toLowerCase().trim();
+
+    // Follow-up: waiting for a watering-frequency answer
+    if (awaitingWateringAnswerFor !== null){
+      const plantName = awaitingWateringAnswerFor;
+      const digits = userInput.match(/\d+/);
+      awaitingWateringAnswerFor = null;
+      if (digits){
+        return wateringFeedback(plantName, parseInt(digits[0], 10));
+      }
+      // No digits found (e.g. "bye", "hi", or plain text) — clear the
+      // pending state and fall through to normal intent/plant handling
+      // below, instead of dead-ending on a canned "couldn't tell" reply.
+    }
+
+    const intent = matchIntent(userInput);
+    if (intent){
+      if (intent.name === "capabilities"){
+        return "I can give you full care cards (sunlight, watering + duration, soil, and best season) for plants like: " + plantList() +
+          ". Try the 📋 browse icon above to explore by category, or ask 'my garden' to see your saved plants.";
+      }
+      if (intent.name === "myGarden"){
+        return myGardenMessage();
+      }
+      return intent.reply;
+    }
+
+    const plantName = findPlantInText(userInput);
+    if (plantName){
+      awaitingWateringAnswerFor = plantName;
+      return { type:"card", plant: plantName };
+    }
+
+    return "Sorry, I don't have care tips for that plant yet. Try: " + plantList() + ".";
+  }
+
+  function respond(userText){
+    typingRow.classList.add('show');
+    chat.scrollTop = chat.scrollHeight;
+    form.querySelector('button').disabled = true;
+    input.disabled = true;
+
+    setTimeout(() => {
+      const response = getResponse(userText);
+      typingRow.classList.remove('show');
+
+      if (response === "EXIT"){
+        addMessage("Goodbye! Take care of your plants 🌿👋", 'bot');
+        ended = true;
+        input.disabled = true;
+        form.querySelector('button').disabled = true;
+        input.placeholder = "Conversation ended — refresh to restart";
+      } else if (response && typeof response === 'object' && response.type === 'card'){
+        addPlantCard(response.plant);
+        input.disabled = false;
+        form.querySelector('button').disabled = false;
+        input.focus();
+      } else {
+        addMessage(response, 'bot');
+        input.disabled = false;
+        form.querySelector('button').disabled = false;
+        input.focus();
+      }
+    }, 420);
+  }
+
+  form.addEventListener('submit', function(e){
+    e.preventDefault();
+    if (ended) return;
+    const text = input.value.trim();
+    if (!text) return;
+    addMessage(text, 'user');
+    input.value = '';
+    respond(text);
+  });
+
+  // Quick-start chips
+  ["hi", "rose", "tulip", "cactus", "my garden", "bye"].forEach(word => {
+    const chip = document.createElement('button');
+    chip.type = 'button';
+    chip.className = 'chip';
+    chip.textContent = word;
+    chip.addEventListener('click', () => {
+      if (ended) return;
+      addMessage(word, 'user');
+      respond(word);
+    });
+    chipsEl.appendChild(chip);
+  });
+
+  // Autocomplete suggestions for the input
+  Object.keys(PLANTS).sort().forEach(name => {
+    const opt = document.createElement('option');
+    opt.value = titleCase(name);
+    suggestionsEl.appendChild(opt);
+  });
+
+  // ---------- Browse-by-category panel ----------
+  function buildBrowsePanel(){
+    const categories = {};
+    Object.keys(PLANTS).sort().forEach(name => {
+      const cat = PLANTS[name].category;
+      (categories[cat] = categories[cat] || []).push(name);
+    });
+    browseInner.innerHTML = '';
+    Object.keys(categories).forEach(cat => {
+      const wrap = document.createElement('div');
+      wrap.className = 'browse-cat';
+      const h = document.createElement('h4');
+      h.textContent = cat;
+      wrap.appendChild(h);
+      const chipsWrap = document.createElement('div');
+      chipsWrap.className = 'browse-chips';
+      categories[cat].forEach(name => {
+        const c = document.createElement('button');
+        c.type = 'button';
+        c.className = 'browse-chip';
+        c.textContent = `${PLANTS[name].emoji} ${titleCase(name)}`;
+        c.addEventListener('click', () => {
+          if (ended) return;
+          browsePanel.classList.remove('open');
+          addMessage(titleCase(name), 'user');
+          respond(name);
+        });
+        chipsWrap.appendChild(c);
+      });
+      wrap.appendChild(chipsWrap);
+      browseInner.appendChild(wrap);
+    });
+  }
+  buildBrowsePanel();
+
+  browseToggle.addEventListener('click', () => {
+    const open = browsePanel.classList.toggle('open');
+    browseToggle.classList.toggle('is-on', open);
+  });
+
+  favToggle.addEventListener('click', () => {
+    if (ended) return;
+    addMessage('my garden', 'user');
+    respond('my garden');
+  });
+
+  // ---------- Dark mode toggle ----------
+  themeToggle.addEventListener('click', () => {
+    const root = document.documentElement;
+    const isDark = root.getAttribute('data-theme') === 'dark';
+    if (isDark){
+      root.removeAttribute('data-theme');
+      themeIcon.innerHTML = moonSVG;
+      themeLabel.textContent = 'Dark';
+      themeToggle.classList.remove('is-on');
+    } else {
+      root.setAttribute('data-theme', 'dark');
+      themeIcon.innerHTML = sunSVG;
+      themeLabel.textContent = 'Light';
+      themeToggle.classList.add('is-on');
+    }
+  });
+
+  // Opening bot message
+  window.addEventListener('DOMContentLoaded', () => {
+    addMessage("Hello! I am your Plant Care Assistant 🌱. Ask about a plant, tap 📋 to browse, or type 'bye' to exit.", 'bot');
+    input.focus();
+  });
+</script>
+</body>
+</html>
