@@ -1,0 +1,637 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Student Performance Predictor — Decision Tree</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Kalam:wght@400;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --chalk-bg: #14355e;
+    --chalk-bg2: #1c4270;
+    --panel: #1e4877;
+    --paper: #f2efe1;
+    --paper-dim: #e7e2cf;
+    --chalk-yellow: #e8d172;
+    --red-ink: #e6453a;
+    --green-ink: #2fbf6f;
+    --line: rgba(242,239,227,0.16);
+    --line-soft: rgba(242,239,227,0.08);
+    --ink: #f2efe3;
+    --muted: rgba(242,239,227,0.62);
+    --display: 'Kalam', cursive;
+    --mono: 'IBM Plex Mono', monospace;
+  }
+
+  *{ box-sizing:border-box; }
+  html{ scroll-behavior:smooth; }
+
+  body{
+    margin:0;
+    background:
+      repeating-linear-gradient(0deg, transparent, transparent 27px, var(--line-soft) 28px),
+      radial-gradient(ellipse at 20% -10%, #2a4b78 0%, transparent 55%),
+      #14355e;
+    color:var(--ink);
+    font-family:var(--mono);
+    line-height:1.5;
+    padding: 32px 16px 80px;
+    transition: background-color .4s ease;
+  }
+
+  .wrap{ max-width: 920px; margin:0 auto; }
+
+  /* ---------- Header ---------- */
+  header{ text-align:center; margin-bottom:44px; }
+  .eyebrow{
+    font-size:11px; letter-spacing:.22em; text-transform:uppercase;
+    color: var(--chalk-yellow); opacity:.85; margin-bottom:10px;
+  }
+  h1{
+    font-family:var(--display);
+    font-weight:700;
+    font-size: clamp(34px, 6vw, 56px);
+    margin: 0 0 10px;
+    color: var(--paper);
+    text-shadow: 0 0 18px rgba(232,209,114,0.18);
+  }
+  header svg.scribble{ width:220px; height:14px; display:block; margin:0 auto 18px; }
+  header p{ color: var(--muted); max-width:520px; margin:0 auto; font-size:14px; }
+
+  body.grey-mode{
+    background: #6e6e6e !important;
+  }
+
+  /* ---------- Step nav ---------- */
+  .step-nav{
+    display:flex; gap:12px; justify-content:center; flex-wrap:wrap; margin-bottom:34px;
+  }
+  .step-btn{
+    font-family:var(--mono); font-size:12.5px; font-weight:600; letter-spacing:.03em;
+    background: rgba(242,239,227,0.07);
+    border:1px solid var(--line);
+    color:var(--paper);
+    padding:12px 20px;
+    border-radius:8px;
+    cursor:pointer;
+    display:flex; align-items:center; gap:8px;
+  }
+  .step-btn .step-num{ font-family:var(--display); font-size:16px; color:var(--chalk-yellow); }
+  .step-btn:hover{ border-color: var(--chalk-yellow); }
+  .step-btn.active{ background: var(--chalk-yellow); color:#20301f; border-color:var(--chalk-yellow); }
+  .step-btn.active .step-num{ color:#20301f; }
+  .step-btn:focus-visible{ outline: 2px solid var(--chalk-yellow); outline-offset:2px; }
+
+  section.block{ display:none; }
+  section.block.active{ display:block; }
+  .empty-hint{ text-align:center; color:var(--muted); font-size:13px; margin-bottom:20px; display:block; }
+  .empty-hint.hide{ display:none; }
+  section.block{
+    position:relative;
+    background: linear-gradient(180deg, var(--panel), var(--chalk-bg2));
+    border:1px solid var(--line);
+    border-radius: 10px;
+    padding: 28px 26px 30px 40px;
+    margin-bottom: 26px;
+    box-shadow: 0 14px 30px -18px rgba(0,0,0,0.55);
+  }
+  section.block::before{
+    content:"";
+    position:absolute; left:22px; top:14px; bottom:14px; width:1px;
+    background: rgba(192,69,58,0.55);
+  }
+  .tab{
+    display:flex; align-items:baseline; gap:10px; margin-bottom:16px;
+  }
+  .tab .num{
+    font-family:var(--display); font-size:22px; color:var(--chalk-yellow);
+  }
+  .tab h2{
+    font-family:var(--display); font-size:22px; margin:0; color:var(--paper);
+    font-weight:700;
+  }
+  .lede{ color:var(--muted); font-size:13.5px; margin: 0 0 18px; max-width:640px; }
+
+  /* ---------- Stats row ---------- */
+  .stats{ display:grid; grid-template-columns: repeat(3,1fr); gap:14px; margin-bottom:20px; }
+  .stat{
+    background: rgba(242,239,227,0.05);
+    border:1px solid var(--line);
+    border-radius:8px;
+    padding:14px 12px;
+    text-align:center;
+  }
+  .stat .n{ font-size:26px; font-weight:600; color:var(--chalk-yellow); }
+  .stat .l{ font-size:10.5px; letter-spacing:.08em; text-transform:uppercase; color:var(--muted); margin-top:4px; }
+
+  /* ---------- Table ---------- */
+  .table-scroll{ overflow-x:auto; border:1px solid var(--line); border-radius:8px; }
+  table{ width:100%; border-collapse:collapse; font-size:12.5px; min-width:620px; }
+  thead th{
+    text-align:left; padding:9px 10px; background:rgba(0,0,0,0.18);
+    color:var(--chalk-yellow); font-weight:600; letter-spacing:.03em;
+    border-bottom:1px solid var(--line); white-space:nowrap;
+  }
+  tbody td{ padding:8px 10px; border-bottom:1px solid var(--line-soft); white-space:nowrap; }
+  tbody tr:nth-child(even){ background:rgba(242,239,227,0.025); }
+  .tag{ padding:2px 8px; border-radius:999px; font-size:10.5px; font-weight:600; letter-spacing:.03em; }
+  .tag.pass{ background:rgba(85,163,116,0.18); color:var(--green-ink); }
+  .tag.fail{ background:rgba(192,69,58,0.18); color:#e08277; }
+  .table-note{ font-size:11px; color:var(--muted); padding:8px 10px; }
+
+  /* ---------- Training summary ---------- */
+  .train-grid{ display:grid; grid-template-columns: 1.1fr 1fr; gap:20px; align-items:center; }
+  @media(max-width:640px){ .train-grid{ grid-template-columns:1fr; } }
+  .accuracy-box{
+    background:rgba(0,0,0,0.16); border:1px solid var(--line); border-radius:10px;
+    padding:20px; text-align:center;
+  }
+  .accuracy-box .big{ font-size:44px; font-weight:600; color:var(--green-ink); }
+  .accuracy-box .sub{ font-size:11px; color:var(--muted); margin-top:6px; }
+  .callout{
+    background: rgba(232,209,114,0.08);
+    border-left:3px solid var(--chalk-yellow);
+    padding:12px 14px; border-radius:0 8px 8px 0; font-size:12.5px; color:var(--paper);
+  }
+  .callout b{ color:var(--chalk-yellow); }
+  ul.mini{ margin:10px 0 0; padding-left:18px; font-size:12px; color:var(--muted); }
+  ul.mini li{ margin-bottom:4px; }
+
+  /* ---------- Form ---------- */
+  form{ display:grid; gap:14px; }
+  .field{
+    display:grid; grid-template-columns: 190px 1fr; align-items:center; gap:14px;
+    border-bottom:1px dotted var(--line); padding-bottom:10px;
+  }
+  @media(max-width:560px){ .field{ grid-template-columns:1fr; gap:6px; } }
+  .field label{ font-size:12.5px; color:var(--paper); }
+  .field .hint{ display:block; font-size:10.5px; color:var(--muted); margin-top:2px; }
+  .field input[type=number], .field select{
+    background: rgba(242,239,227,0.06);
+    border:1px solid var(--line);
+    color:var(--ink);
+    font-family:var(--mono);
+    font-size:14px;
+    padding:9px 10px;
+    border-radius:6px;
+    width:100%;
+  }
+  .field input:focus, .field select:focus, button:focus-visible{
+    outline: 2px solid var(--chalk-yellow); outline-offset:2px;
+  }
+  .radio-row{ display:flex; gap:10px; }
+  .radio-row label{
+    display:flex; align-items:center; gap:6px; font-size:13px;
+    background:rgba(242,239,227,0.06); border:1px solid var(--line);
+    padding:8px 12px; border-radius:6px; cursor:pointer; flex:1; justify-content:center;
+  }
+  .radio-row input{ accent-color: var(--chalk-yellow); }
+
+  button#gradeBtn{
+    margin-top:6px; justify-self:start;
+    font-family:var(--display); font-size:18px; font-weight:700;
+    background: var(--chalk-yellow); color:#20301f; border:none;
+    padding:12px 26px; border-radius:8px; cursor:pointer;
+    box-shadow: 0 6px 0 #b89a3f;
+    transition: transform .08s ease;
+  }
+  button#gradeBtn:active{ transform: translateY(4px); box-shadow: 0 2px 0 #b89a3f; }
+
+  /* ---------- Result ---------- */
+  #resultWrap{
+    margin-top:24px; display:none;
+    background: rgba(0,0,0,0.22);
+    border: 1px solid var(--chalk-yellow);
+    border-radius: 12px;
+    padding: 20px;
+  }
+  .result-shell{
+    display:grid; grid-template-columns: 190px 1fr; gap:24px; align-items:start;
+  }
+  @media(max-width:640px){ .result-shell{ grid-template-columns:1fr; } }
+  .stamp-zone{ display:flex; justify-content:center; align-items:center; }
+  .stamp{
+    width:170px; height:170px;
+    transform: rotate(-9deg) scale(0);
+    opacity:0;
+  }
+  .stamp.show{ animation: stampDown .5s cubic-bezier(.2,1.6,.4,1) forwards; }
+  @keyframes stampDown{
+    0%{ transform: rotate(-9deg) scale(2.4); opacity:0; }
+    60%{ opacity:1; }
+    100%{ transform: rotate(-9deg) scale(1); opacity:0.94; }
+  }
+  @media (prefers-reduced-motion: reduce){
+    .stamp.show{ animation:none; transform: rotate(-9deg) scale(1); opacity:.94; }
+  }
+  .path-card{
+    background: rgba(0,0,0,0.16); border:1px solid var(--line); border-radius:10px; padding:16px 18px;
+  }
+  .path-card h3{ font-family:var(--display); margin:0 0 10px; font-size:18px; color:var(--paper); }
+  .path-step{ display:flex; gap:10px; font-size:12.5px; padding:6px 0; border-bottom:1px solid var(--line-soft); }
+  .path-step:last-child{ border-bottom:none; }
+  .path-step .mark{ font-weight:700; }
+  .path-step .mark.go-pass{ color: var(--green-ink); }
+  .path-step .mark.go-fail{ color:#e08277; }
+  .confidence{ margin-top:10px; font-size:12px; color:var(--muted); }
+
+  footer{ text-align:center; margin-top:36px; font-size:11px; color:var(--muted); }
+  footer a{ color:var(--chalk-yellow); }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <div class="eyebrow">Classification · Trained in your browser</div>
+    <h1>Student Performance Predictor</h1>
+    <svg class="scribble" viewBox="0 0 220 14"><path d="M2 8 Q 30 2, 55 8 T 110 8 T 165 8 T 218 8" stroke="#e8d172" stroke-width="2.5" fill="none" stroke-linecap="round" opacity="0.8"/></svg>
+    <p>A small decision tree learns from 70 synthetic student records — study hours, attendance, marks and assignments — then grades a new entry as <b>Pass</b> or <b>Fail</b>, right here, with no server involved.</p>
+  </header>
+
+  <nav class="step-nav">
+    <button type="button" class="step-btn" data-target="sectionData"><span class="step-num">01</span> The Gradebook</button>
+    <button type="button" class="step-btn" data-target="sectionTrain"><span class="step-num">02</span> Training the Tree</button>
+    <button type="button" class="step-btn" data-target="sectionPredict"><span class="step-num">03</span> Grade a New Student</button>
+  </nav>
+  <p class="empty-hint" id="emptyHint">Pick a step above to open it.</p>
+
+  <!-- 01 DATA -->
+  <section class="block" id="sectionData">
+    <div class="tab"><span class="num">01</span><h2>The Gradebook</h2></div>
+    <p class="lede">Every model starts with data. Below is the full class roster the tree will study — five features per student, and whether they ultimately passed.</p>
+    <div class="stats">
+      <div class="stat"><div class="n" id="statTotal">—</div><div class="l">Total Students</div></div>
+      <div class="stat"><div class="n" id="statTrain">—</div><div class="l">Training Rows (80%)</div></div>
+      <div class="stat"><div class="n" id="statTest">—</div><div class="l">Held-out Test Rows (20%)</div></div>
+    </div>
+    <div class="table-scroll">
+      <table>
+        <thead>
+          <tr><th>#</th><th>Study Hrs/day</th><th>Attendance</th><th>Previous Marks</th><th>Internal /40</th><th>Assignments</th><th>Set</th><th>Result</th></tr>
+        </thead>
+        <tbody id="dataTableBody"></tbody>
+      </table>
+      <div class="table-note" id="tableNote"></div>
+    </div>
+  </section>
+
+  <!-- 02 TRAIN -->
+  <section class="block" id="sectionTrain">
+    <div class="tab"><span class="num">02</span><h2>Training the Tree</h2></div>
+    <p class="lede">The gradebook is split 80/20. The tree learns splitting rules only from the training rows, then we quiz it on the test rows it has never seen.</p>
+    <div class="train-grid">
+      <div class="accuracy-box">
+        <div class="big" id="accuracyNum">—</div>
+        <div class="sub" id="accuracySub">test accuracy</div>
+      </div>
+      <div class="callout">
+        <b>Strongest signal:</b> <span id="topSplitText">calculating…</span>
+        <ul class="mini" id="treeStatsList"></ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- 03 PREDICT -->
+  <section class="block" id="sectionPredict">
+    <div class="tab"><span class="num">03</span><h2>Grade a New Student</h2></div>
+    <p class="lede">Enter one student's numbers and the same tree will walk them down its branches to a verdict.</p>
+    <form id="predictForm">
+      <div class="field">
+        <label for="studyHours">Study Hours / day<span class="hint">typical range 1–9</span></label>
+        <input type="number" id="studyHours" min="0" max="15" step="0.5" value="4" required>
+      </div>
+      <div class="field">
+        <label for="attendance">Attendance %<span class="hint">0–100</span></label>
+        <input type="number" id="attendance" min="0" max="100" step="1" value="85" required>
+      </div>
+      <div class="field">
+        <label for="prevMarks">Previous Marks<span class="hint">out of 100</span></label>
+        <input type="number" id="prevMarks" min="0" max="100" step="1" value="70" required>
+      </div>
+      <div class="field">
+        <label for="internalMarks">Internal Marks<span class="hint">out of 40</span></label>
+        <input type="number" id="internalMarks" min="0" max="40" step="1" value="32" required>
+      </div>
+      <div class="field">
+        <label>Assignments Completed</label>
+        <div class="radio-row">
+          <label><input type="radio" name="assign" value="1" checked> Yes</label>
+          <label><input type="radio" name="assign" value="0"> No</label>
+        </div>
+      </div>
+      <button type="submit" id="gradeBtn" onclick="if(window.gradeStudent){window.gradeStudent(event);}">Stamp the verdict</button>
+    </form>
+    <noscript><p style="color:#ffb4a8;">This tool needs JavaScript to run the model — please open the downloaded file in a regular browser tab.</p></noscript>
+
+    <div id="resultWrap">
+      <div class="result-shell">
+        <div class="stamp-zone">
+          <svg id="stampSvg" class="stamp" viewBox="0 0 170 170">
+            <defs>
+              <filter id="inkTexture" x="-20%" y="-20%" width="140%" height="140%">
+                <feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="2" result="noise" seed="4"/>
+                <feDisplacementMap in="SourceGraphic" in2="noise" scale="3.2"/>
+              </filter>
+            </defs>
+            <circle cx="85" cy="85" r="80" fill="#f2efe1"/>
+            <g id="stampGroup">
+              <circle cx="85" cy="85" r="76" fill="none" stroke="currentColor" stroke-width="6"/>
+              <circle cx="85" cy="85" r="64" fill="none" stroke="currentColor" stroke-width="2.5"/>
+              <text id="stampText" x="85" y="97" text-anchor="middle" font-family="'Kalam', cursive" font-weight="700" font-size="38" fill="currentColor">PASS</text>
+            </g>
+          </svg>
+        </div>
+        <div class="path-card">
+          <h3>Why this verdict</h3>
+          <div id="pathSteps"></div>
+          <div class="confidence" id="confidenceText"></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <footer>
+    Dataset is synthetic and regenerated with a fixed seed on every load · model retrains client-side each time · nothing leaves your browser.
+  </footer>
+</div>
+
+<script>
+(function(){
+  "use strict";
+
+  /* ---------------- seeded RNG ---------------- */
+  function mulberry32(seed){
+    return function(){
+      seed |= 0; seed = seed + 0x6D2B79F5 | 0;
+      let t = Math.imul(seed ^ seed >>> 15, 1 | seed);
+      t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t;
+      return ((t ^ t >>> 14) >>> 0) / 4294967296;
+    };
+  }
+
+  const FEATURES = ['study_hours','attendance','previous_marks','internal_marks','assignments'];
+  const FEATURE_LABELS = {
+    study_hours:'Study Hours',
+    attendance:'Attendance %',
+    previous_marks:'Previous Marks',
+    internal_marks:'Internal Marks',
+    assignments:'Assignments Completed'
+  };
+
+  /* ---------------- 1. generate dataset ---------------- */
+  function genDataset(n, seed){
+    const rand = mulberry32(seed);
+    const data = [];
+    for(let i=0;i<n;i++){
+      const study_hours = Math.round((1 + rand()*8)*2)/2;   // 1–9, .5 steps
+      const attendance = Math.round(40 + rand()*60);         // 40–100
+      const previous_marks = Math.round(30 + rand()*65);     // 30–95
+      const internal_marks = Math.round(10 + rand()*30);     // 10–40
+      const assignments = rand() < 0.65 ? 1 : 0;
+
+      const norm = (study_hours/9)*0.35
+                 + (attendance/100)*0.25
+                 + (previous_marks/100)*0.15
+                 + (internal_marks/40)*0.15
+                 + assignments*0.10;
+      const noise = (rand()-0.5)*0.18;
+      const label = (norm + noise) > 0.52 ? 1 : 0;
+
+      data.push({ id:i+1, study_hours, attendance, previous_marks, internal_marks, assignments, label });
+    }
+    return data;
+  }
+
+  function shuffle(arr, seed){
+    const rng = mulberry32(seed);
+    const a = arr.slice();
+    for(let i=a.length-1;i>0;i--){
+      const j = Math.floor(rng()*(i+1));
+      [a[i],a[j]] = [a[j],a[i]];
+    }
+    return a;
+  }
+
+  const dataset = genDataset(70, 42);
+  const shuffled = shuffle(dataset, 7);
+  const splitIdx = Math.floor(shuffled.length * 0.8);
+  const trainSet = shuffled.slice(0, splitIdx);
+  const testSet  = shuffled.slice(splitIdx);
+  const trainIds = new Set(trainSet.map(r=>r.id));
+
+  /* ---------------- 2. build decision tree ---------------- */
+  function gini(rows){
+    const n = rows.length;
+    if(n===0) return 0;
+    const p1 = rows.filter(r=>r.label===1).length/n;
+    const p0 = 1-p1;
+    return 1 - p1*p1 - p0*p0;
+  }
+
+  function majorityClass(rows){
+    const pass = rows.filter(r=>r.label===1).length;
+    return pass >= rows.length/2 ? 1 : 0;
+  }
+
+  function bestSplit(rows){
+    let best = null;
+    const base = gini(rows);
+    FEATURES.forEach(feat=>{
+      const values = [...new Set(rows.map(r=>r[feat]))].sort((a,b)=>a-b);
+      for(let i=0;i<values.length-1;i++){
+        const threshold = (values[i]+values[i+1])/2;
+        const left = rows.filter(r=>r[feat] <= threshold);
+        const right = rows.filter(r=>r[feat] > threshold);
+        if(left.length<2 || right.length<2) continue;
+        const weighted = (left.length/rows.length)*gini(left) + (right.length/rows.length)*gini(right);
+        const gain = base - weighted;
+        if(!best || gain > best.gain){
+          best = { feat, threshold, gain, left, right };
+        }
+      }
+    });
+    return best;
+  }
+
+  function buildTree(rows, depth=0, maxDepth=4){
+    const pass = rows.filter(r=>r.label===1).length;
+    if(gini(rows)===0 || depth>=maxDepth || rows.length<6){
+      return { leaf:true, class: majorityClass(rows), n: rows.length, pass };
+    }
+    const split = bestSplit(rows);
+    if(!split || split.gain <= 0.001){
+      return { leaf:true, class: majorityClass(rows), n: rows.length, pass };
+    }
+    return {
+      leaf:false,
+      feature: split.feat,
+      threshold: split.threshold,
+      gain: split.gain,
+      n: rows.length,
+      left: buildTree(split.left, depth+1, maxDepth),
+      right: buildTree(split.right, depth+1, maxDepth)
+    };
+  }
+
+  const tree = buildTree(trainSet);
+
+  function predict(node, sample, path){
+    path = path || [];
+    if(node.leaf){
+      path.push({ leaf:true, class: node.class, n: node.n, pass: node.pass });
+      return { class: node.class, path };
+    }
+    const val = sample[node.feature];
+    const goLeft = val <= node.threshold;
+    path.push({ feature: node.feature, threshold: node.threshold, value: val, goLeft });
+    return predict(goLeft ? node.left : node.right, sample, path);
+  }
+
+  /* ---------------- 3. evaluate on held-out test set ---------------- */
+  let correct = 0;
+  testSet.forEach(r=>{
+    const res = predict(tree, r);
+    if(res.class === r.label) correct++;
+  });
+  const accuracy = testSet.length ? (correct/testSet.length) : 0;
+
+  function countNodes(node){
+    if(node.leaf) return { depth:1, leaves:1 };
+    const l = countNodes(node.left), r = countNodes(node.right);
+    return { depth: 1+Math.max(l.depth, r.depth), leaves: l.leaves + r.leaves };
+  }
+  const stats = countNodes(tree);
+
+  /* ---------------- render: gradebook table ---------------- */
+  const tbody = document.getElementById('dataTableBody');
+  const showRows = shuffled.slice(0, 16);
+  showRows.forEach(r=>{
+    const tr = document.createElement('tr');
+    const inTrain = trainIds.has(r.id);
+    tr.innerHTML = `
+      <td>${r.id}</td>
+      <td>${r.study_hours}</td>
+      <td>${r.attendance}%</td>
+      <td>${r.previous_marks}</td>
+      <td>${r.internal_marks}</td>
+      <td>${r.assignments ? 'Yes' : 'No'}</td>
+      <td>${inTrain ? 'train' : 'test'}</td>
+      <td><span class="tag ${r.label ? 'pass':'fail'}">${r.label ? 'PASS':'FAIL'}</span></td>`;
+    tbody.appendChild(tr);
+  });
+  document.getElementById('tableNote').textContent =
+    `Showing ${showRows.length} of ${shuffled.length} records.`;
+
+  document.getElementById('statTotal').textContent = shuffled.length;
+  document.getElementById('statTrain').textContent = trainSet.length;
+  document.getElementById('statTest').textContent = testSet.length;
+
+  /* ---------------- render: training summary ---------------- */
+  document.getElementById('accuracyNum').textContent = Math.round(accuracy*100) + '%';
+  document.getElementById('accuracySub').textContent = `${correct} of ${testSet.length} unseen students graded correctly`;
+
+  function formatFeatureValue(feat, val){
+    if(feat==='assignments') return val>=0.5 ? 'Yes' : 'No';
+    if(feat==='attendance') return Math.round(val) + '%';
+    if(feat==='study_hours') return val + ' hrs';
+    return Math.round(val);
+  }
+
+  const topLabel = FEATURE_LABELS[tree.feature] || 'a mix of features';
+  document.getElementById('topSplitText').innerHTML =
+    `The very first question the tree asks is <b>${topLabel}</b> — split around ` +
+    `<b>${formatFeatureValue(tree.feature, tree.threshold)}</b>. Everything else refines from there.`;
+
+  document.getElementById('treeStatsList').innerHTML = `
+    <li>Tree depth: ${stats.depth} · leaf rules: ${stats.leaves}</li>
+    <li>Trained only on the ${trainSet.length} training rows — the ${testSet.length} test rows were never shown to it.</li>
+  `;
+
+  /* ---------------- step nav ---------------- */
+  const stepButtons = document.querySelectorAll('.step-btn');
+  const emptyHint = document.getElementById('emptyHint');
+  stepButtons.forEach(function(btn){
+    btn.addEventListener('click', function(){
+      const targetId = btn.getAttribute('data-target');
+
+      document.querySelectorAll('section.block').forEach(function(sec){
+        sec.classList.toggle('active', sec.id === targetId);
+      });
+      stepButtons.forEach(function(b){
+        b.classList.toggle('active', b === btn);
+      });
+      document.body.classList.add('grey-mode');
+      emptyHint.classList.add('hide');
+
+      const target = document.getElementById(targetId);
+      if(target) target.scrollIntoView({ behavior:'smooth', block:'start' });
+    });
+  });
+
+  /* ---------------- predict form ---------------- */
+  const form = document.getElementById('predictForm');
+  const resultWrap = document.getElementById('resultWrap');
+  const stampSvg = document.getElementById('stampSvg');
+  const stampText = document.getElementById('stampText');
+  const pathSteps = document.getElementById('pathSteps');
+  const confidenceText = document.getElementById('confidenceText');
+
+  function gradeStudent(e){
+    if(e && e.preventDefault) e.preventDefault();
+
+    const sample = {
+      study_hours: parseFloat(document.getElementById('studyHours').value) || 0,
+      attendance: parseFloat(document.getElementById('attendance').value) || 0,
+      previous_marks: parseFloat(document.getElementById('prevMarks').value) || 0,
+      internal_marks: parseFloat(document.getElementById('internalMarks').value) || 0,
+      assignments: parseFloat(document.querySelector('input[name="assign"]:checked').value)
+    };
+
+    const result = predict(tree, sample);
+    const isPass = result.class === 1;
+
+    // make the result section visible first
+    resultWrap.style.display = 'block';
+
+    // stamp
+    stampSvg.classList.remove('show');
+    stampSvg.style.color = isPass ? 'var(--green-ink)' : 'var(--red-ink)';
+    stampSvg.style.opacity = '1';
+    stampSvg.style.transform = 'rotate(-9deg) scale(1)';
+    stampText.textContent = isPass ? 'PASS' : 'FAIL';
+    requestAnimationFrame(function(){
+      stampSvg.classList.add('show');
+    });
+
+    // decision path
+    pathSteps.innerHTML = '';
+    result.path.forEach(step=>{
+      if(step.leaf) return;
+      const label = FEATURE_LABELS[step.feature];
+      const cmp = step.goLeft ? '≤' : '>';
+      const div = document.createElement('div');
+      div.className = 'path-step';
+      div.innerHTML = `
+        <span class="mark ${step.goLeft ? (isPass?'':'go-fail') : (isPass?'go-pass':'')}">${step.goLeft ? '↳' : '↳'}</span>
+        <span>${label}: <b>${formatFeatureValue(step.feature, step.value)}</b> ${cmp} ${formatFeatureValue(step.feature, step.threshold)}</span>`;
+      pathSteps.appendChild(div);
+    });
+
+    const leaf = result.path[result.path.length-1];
+    const supportPct = leaf.n ? Math.round((isPass ? leaf.pass : (leaf.n-leaf.pass)) / leaf.n * 100) : 0;
+    confidenceText.textContent = leaf.n
+      ? `Among ${leaf.n} similar training students who reached this same branch, ${supportPct}% ${isPass?'passed':'failed'}.`
+      : '';
+
+    resultWrap.scrollIntoView({ behavior:'smooth', block:'nearest' });
+  }
+
+  window.gradeStudent = gradeStudent;
+  form.addEventListener('submit', gradeStudent);
+
+})();
+</script>
+</body>
+</html>
